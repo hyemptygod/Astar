@@ -15,10 +15,12 @@
 
     public class Zones
     {
-        public struct Zone
+        public class Zone : IFloydNode
         {
-            public Vector start;
-            public Vector end;
+            public int index { get; set; }
+            public Vector start { get; set; }
+            public Vector end { get; set; }
+            public Vector pos { get; set; }
 
             public Bound GetBounds(Vector offset)
             {
@@ -42,11 +44,38 @@
                 }
                 return bound;
             }
+
+            public float GetDistance(IFloydNode node)
+            {
+                if(node == this)
+                {
+                    return 0;
+                }
+
+                Vector offset = (node as Zone).pos - pos;
+                foreach (var item in Vector.eight)
+                {
+                    if (item == offset)
+                    {
+                        foreach (var v in GetBounds(offset))
+                        {
+                            if (_map[v].walkable)
+                            {
+                                return 1f;
+                            }
+                        }
+                    }
+                }
+
+                return float.MaxValue;
+            }
         }
 
-        private Zone[] m_Zone;
+        private static IMap _map;
         private int m_ZoneX;
         private int m_ZoneY;
+
+        private Zone[] m_Zone;
 
         private int[,] m_Path;
 
@@ -54,91 +83,55 @@
         {
             get
             {
-
+                List<int> result = new List<int>();
+                if(m_Path.TryGetFloydPath(start, end, ref result))
+                {
+                    return result;
+                }
+                return null;
             }
         }
 
-        public Zones(IMap map, int rows, int cols, int zonex, int zoney)
+        public Zones(IMap map, int zonex, int zoney)
         {
-            m_ZoneX = zonex;
-            m_ZoneY = zoney;
+            _map = map;
+
+            m_ZoneX = zonex <= 0 ? 1 : zonex;
+            m_ZoneY = zoney <= 0 ? 1 : zoney;
             m_Zone = new Zone[m_ZoneX * m_ZoneY];
             m_Path = new int[m_ZoneX, m_ZoneY];
-            Vector step = new Vector(rows / m_ZoneX, cols / m_ZoneY);
+            Vector step = new Vector(map.Rows / m_ZoneX, map.Cols / m_ZoneY);
             Vector start = Vector.zero;
             Vector end = Vector.one;
             for (int i = 0; i < m_ZoneX; i++)
             {
                 start.x = end.x - 1;
-                end.x = Math.Min(end.x + step.x, rows - 1);
+                end.x = Math.Min(end.x + step.x, map.Rows - 1);
                 for (int j = 0; j < m_ZoneY; j++)
                 {
                     start.y = end.y - 1;
-                    end.y = Math.Min(end.y + step.y, cols - 1);
-                    m_Zone[i * m_ZoneY + j] = new Zone
+                    end.y = Math.Min(end.y + step.y, map.Cols - 1);
+                    int index = i * m_ZoneY + j;
+                    m_Zone[index] = new Zone()
                     {
+                        index = index,
+                        pos = new Vector(i, j),
                         start = start,
                         end = end,
                     };
                 }
             }
 
-            float[,] cost = new float[m_Zone.Length, m_Zone.Length];
-            for (int i = 0; i < m_Zone.Length; i++)
-            {
-                for (int j = 0; j < m_Zone.Length; j++)
-                {
-                    cost[i, j] = Distance(i, j, map);
-                }
-            }
-
-            for (int k = 0; k < m_Zone.Length; k++)
-            {
-                for (int i = 0; i < m_Zone.Length; i++)
-                {
-                    for (int j = 0; j < m_Zone.Length; j++)
-                    {
-                        float d = cost[i, k] + cost[k, j];
-                        if (d < cost[i, j])
-                        {
-                            cost[i, j] = d;
-                            m_Path[i, j] = k;
-                        }
-                    }
-                }
-            }
+            m_Path = m_Zone.Floyd();
         }
 
-        private float Distance(int index1, int index2, IMap map)
+        private void GetPath(int start, int end, ref List<int> route)
         {
-            if(index1 == index2)
+            if(start != end)
             {
-                return 0;
+                GetPath(start, m_Path[start, end], ref route);
             }
-
-            Vector va = new Vector(index1 / m_ZoneY, index1 % m_ZoneY);
-            Vector vb = new Vector(index2 / m_ZoneY, index2 % m_ZoneY);
-            Vector offset = vb - va;
-            foreach (var item in Vector.eight)
-            {
-                if (item == offset)
-                {
-                    foreach (var v in m_Zone[index1].GetBounds(offset))
-                    {
-                        if (map[v].walkable)
-                        {
-                            return 1f;
-                        }
-                    }
-                }
-            }
-
-            return float.MaxValue;
-        }
-
-        private void GetPath(int start, int end)
-        {
-
+            route.Add(end);
         }
     }
 
@@ -146,9 +139,6 @@
     {
         public int Rows { get; private set; }
         public int Cols { get; private set; }
-
-        private int m_ZoneX;
-        private int m_ZoneY;
 
         private T[,] m_Cells;
 
@@ -185,7 +175,6 @@
         }
 
         private Zones m_Zones;
-        private int[,] m_Costs;
 
         public Map(T[,] cells, int rows, int cols, int zonex = 1, int zoney = 1)
         {
@@ -194,34 +183,8 @@
             Rows = rows;
             Cols = cols;
 
-            m_ZoneX = zonex <= 0 ? 1 : zonex;
-            m_ZoneY = zoney <= 0 ? 1 : zoney;
-
             //分区
-            Partition();
-        }
-
-        private void Partition()
-        {
-            
-        }
-
-        private float CalculateZoneCost(Vector startZone, Vector endZone)
-        {
-            if(startZone == endZone)
-            {
-                return 0;
-            }
-
-            Vector offset = endZone - startZone;
-            int startx, endx, starty, endy;
-            foreach (var item in Vector.eight)
-            {
-                if(item == offset)
-                {
-                    
-                }
-            }
+            m_Zones = new Zones(this, zonex, zoney);
         }
     }
 }

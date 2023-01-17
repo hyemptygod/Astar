@@ -1,0 +1,10 @@
+D:\Study\Astar\Test\obj\Debug\Test.csproj.AssemblyReference.cache
+D:\Study\Astar\Test\obj\Debug\Test.csproj.CoreCompileInputs.cache
+D:\Study\Astar\Test\bin\Debug\Test.exe.config
+D:\Study\Astar\Test\bin\Debug\Test.exe
+D:\Study\Astar\Test\bin\Debug\Test.pdb
+D:\Study\Astar\Test\bin\Debug\Astar.dll
+D:\Study\Astar\Test\bin\Debug\Astar.pdb
+D:\Study\Astar\Test\obj\Debug\Test.csproj.CopyComplete
+D:\Study\Astar\Test\obj\Debug\Test.exe
+D:\Study\Astar\Test\obj\Debug\Test.pdb

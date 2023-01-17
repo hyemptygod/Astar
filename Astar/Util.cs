@@ -2,10 +2,16 @@
 {
     using System;
     using System.Collections.Generic;
-using System.Diagnostics;
+    using System.Diagnostics;
     using System.Linq;
     using System.Text;
     using System.Threading.Tasks;
+
+    public interface IFloydNode
+    {
+        int index { get; }
+        float GetDistance(IFloydNode node);
+    }
 
     public static class Util
     {
@@ -21,6 +27,70 @@ using System.Diagnostics;
             else if (val.CompareTo(max) > 0) return max;
             else return val;
         }
+
+        /// <summary>
+        /// Floyd算法求最短路径
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="datas"></param>
+        /// <param name="getDistance"></param>
+        /// <returns></returns>
+        public static int[,] Floyd<T>(this T[] datas) where T : IFloydNode
+        {
+            int[,] result = new int[datas.Length, datas.Length];
+            float[,] cost = new float[datas.Length, datas.Length];
+            for (int i = 0; i < datas.Length; i++)
+            {
+                for (int j = i; j < datas.Length; j++)
+                {
+                    cost[i, j] = datas[i].GetDistance(datas[j]);
+                    cost[j, i] = cost[i, j];
+                    result[i, j] = i;
+                    result[j, i] = j;
+                }
+            }
+
+            for (int k = 0; k < datas.Length; k++)
+            {
+                for (int i = 0; i < datas.Length; i++)
+                {
+                    for (int j = 0; j < datas.Length; j++)
+                    {
+                        float d = cost[i, k] + cost[k, j];
+                        if (d < cost[i, j])
+                        {
+                            cost[i, j] = d;
+                            result[i, j] = k;
+                        }
+                    }
+                }
+            }
+            return result;
+        }
+
+        public static bool TryGetFloydPath(this int[,] m_Path, int start, int end, ref List<int> route)
+        {
+            if(start < 0 || start >= m_Path.GetLength(0))
+            {
+                return false;
+            }
+
+            if (end < 0 || end >= m_Path.GetLength(0))
+            {
+                return false;
+            }
+
+            if (start != end)
+            {
+                if(!m_Path.TryGetFloydPath(start, m_Path[start, end], ref route))
+                {
+                    return false;
+                }
+            }
+            route.Add(end);
+            return true;
+        }
+
 
         private static Stopwatch _stopwatch = new Stopwatch();
         public static void Runner(string des, Action callback)
