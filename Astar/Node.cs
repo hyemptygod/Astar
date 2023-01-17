@@ -43,7 +43,7 @@
             return F.CompareTo(other.F);
         }
 
-        public IEnumerable<Neighbour> GetNeighbours(IMap map, NeighbourMode mode)
+        public IEnumerable<Neighbour> GetNeighbours(IMap map, Zones.Zone zone, NeighbourMode mode)
         {
             if(cell == null)
             {

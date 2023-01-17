@@ -22,6 +22,19 @@
             public Vector end { get; set; }
             public Vector pos { get; set; }
 
+            private Vector[,][] m_ConnectingPoint;
+            public Vector[] this[int x, int y]
+            {
+                get
+                {
+                    return m_ConnectingPoint[x, y];
+                }
+                set
+                {
+                    m_ConnectingPoint[x, y] = value;
+                }
+            }
+
             public Bound GetBounds(Vector offset)
             {
                 Bound bound = new Bound();
@@ -59,6 +72,8 @@
                     {
                         foreach (var v in GetBounds(offset))
                         {
+                           
+
                             if (_map[v].walkable)
                             {
                                 return 1f;
@@ -68,6 +83,24 @@
                 }
 
                 return float.MaxValue;
+            }
+
+            public bool Contains(Vector pos)
+            {
+                return pos >= start && pos <= end;
+            }
+
+            public bool IsWalkable(Vector v)
+            {
+                Vector next;
+                foreach (var offset in Vector.eight)
+                {
+                    next = v + offset;
+                    if(Contains(pos) && _map[next].walkable)
+                    {
+                        return true;
+                    }
+                }
             }
         }
 

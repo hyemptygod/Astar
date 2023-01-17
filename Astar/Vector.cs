@@ -295,6 +295,16 @@
 			return !(lhs == rhs);
 		}
 
+		public static bool operator >=(Vector lhs, Vector rhs)
+		{
+			return lhs.x >= rhs.x && lhs.y >= rhs.y;
+		}
+
+		public static bool operator <=(Vector lhs, Vector rhs)
+		{
+			return lhs.x <= rhs.x && lhs.y <= rhs.y;
+		}
+
 		/// <summary>
 		///   <para>Returns true if the objects are equal.</para>
 		/// </summary>
