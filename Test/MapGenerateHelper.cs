@@ -11,11 +11,9 @@
     using System.Threading.Tasks;
     using System.Diagnostics;
 
-    public class Cell : ICell
+    public class Cell : Astar.Cell
     {
-        public Vector pos { get; set; }
-        public bool walkable { get; set; }
-        public int cost { get { return 1; } }
+        public override int cost { get { return 1; } }
     }
 
     public static class MapGenerateHelper
@@ -73,9 +71,9 @@
             return false;
         }
 
-        public static Map<Cell> GenerateRandomMap(int rows, int cols)
+        public static Map<Cell> GenerateRandomMap(int rows, int cols, int k)
         {
-            Map<Cell> result = new Map<Cell>(new Cell[rows, cols], rows, cols);
+            Map<Cell> result = new Map<Cell>(new Cell[rows, cols], rows, cols, k);
             Vector start = new Vector(0, 0);
             Vector end = new Vector(rows - 1, cols - 1);
             List<Vector> list = new List<Vector>();
@@ -108,9 +106,9 @@
             return result;
         }
 
-        public static void Create(this IMap map, string name, List<ICell> points = null)
+        public static void Create(this IMap map, string name, List<Astar.Cell> points = null)
         {
-            Bitmap bitmap = new Bitmap(map.Cols * GRID, map.Rows * GRID);
+            Bitmap bitmap = new Bitmap(map.cols * GRID, map.rows * GRID);
 
             name += ".png";
             Util.Runner(string.Format("draw {0} line", name), bitmap.DrawGridLine, map, Color.Black);
@@ -124,7 +122,7 @@
 
         private static void DrawGridLine(this Bitmap bitmap, IMap map, Color color)
         {
-            for (int x = 0; x < map.Rows; x++)
+            for (int x = 0; x < map.rows; x++)
             {
                 for (int i = 0; i < LINE; i++)
                 {
@@ -136,7 +134,7 @@
                 }
             }
 
-            for (int y = 0; y < map.Cols; y++)
+            for (int y = 0; y < map.cols; y++)
             {
                 for (int i = 0; i < LINE; i++)
                 {
@@ -151,10 +149,10 @@
 
         private static void DrawCell(this Bitmap bitmap, IMap map)
         {
-            for (int i = 0; i < map.Rows; i++)
+            for (int i = 0; i < map.rows; i++)
             {
                 int x = i * GRID;
-                for (int j = 0; j < map.Cols; j++)
+                for (int j = 0; j < map.cols; j++)
                 {
                     SetPixel(bitmap, x, j * GRID, map[i, j].walkable ? Color.Green : Color.Red);
                 }
@@ -172,7 +170,7 @@
             }
         }
 
-        private static void DrawRoute(this Bitmap bitmap, List<ICell> points)
+        private static void DrawRoute(this Bitmap bitmap, List<Astar.Cell> points)
         {
             for (int i = 0; i < points.Count - 1; i++)
             {

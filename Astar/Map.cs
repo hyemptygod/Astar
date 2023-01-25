@@ -2,184 +2,174 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Text;
 
 
     public interface IMap
     {
-        int Rows { get; }
-        int Cols { get; }
-        ICell this[int x, int y] { get; }
-        ICell this[Vector pos] { get; }
+        int rows { get; }
+        int cols { get; }
+        Cell this[int x, int y] { get; }
+        Cell this[Vector pos] { get; }
     }
 
-    public class Zones
+    public struct Cluster
     {
-        public class Zone : IFloydNode
+        public int index;
+        /// <summary>
+        /// 质心点
+        /// </summary>
+        public Vector centroid;
+        public List<Vector> points;
+        /// <summary>
+        /// 障碍率
+        /// </summary>
+        public float po;
+        /// <summary>
+        /// 直通率
+        /// </summary>
+        public float pt;
+
+        private Vector m_Sum;
+        private Vector m_Min;
+        private Vector m_Max;
+
+        public Cluster(int index, Vector centroid)
         {
-            public int index { get; set; }
-            public Vector start { get; set; }
-            public Vector end { get; set; }
-            public Vector pos { get; set; }
+            this.index = index;
+            this.centroid = centroid;
 
-            private Vector[,][] m_ConnectingPoint;
-            public Vector[] this[int x, int y]
+            points = new List<Vector>();
+            po = 0f;
+            pt = 0f;
+            m_Sum = Vector.zero;
+            m_Min = new Vector(int.MaxValue, int.MaxValue);
+            m_Max = Vector.zero;
+        }
+
+        public void Add(Vector p)
+        {
+            points.Add(p);
+            m_Sum += p;
+            if (p.x < m_Min.x)
             {
-                get
-                {
-                    return m_ConnectingPoint[x, y];
-                }
-                set
-                {
-                    m_ConnectingPoint[x, y] = value;
-                }
+                m_Min.x = p.x;
+            }
+            if (p.x > m_Max.x)
+            {
+                m_Max.x = p.x;
             }
 
-            public Bound GetBounds(Vector offset)
+            if (p.y < m_Min.y)
             {
-                Bound bound = new Bound();
-                for (int i = 0; i <= 1; i++)
-                {
-                    if (offset[i] > 0)
-                    {
-                        bound[i, 0] = end[i];
-                        bound[i, 1] = end[i];
-                    }
-                    else if (offset[i] < 0)
-                    {
-                        bound[i, 0] = start[i];
-                        bound[i, 1] = start[i];
-                    }
-                    else
-                    {
-                        bound[i] = new Vector(start[i], end[1]);
-                    }
-                }
-                return bound;
+                m_Min.y = p.y;
             }
-
-            public float GetDistance(IFloydNode node)
+            if (p.y > m_Max.y)
             {
-                if(node == this)
-                {
-                    return 0;
-                }
+                m_Max.y = p.y;
+            }
+        }
 
-                Vector offset = (node as Zone).pos - pos;
-                foreach (var item in Vector.eight)
+        public bool Update()
+        {
+            Vector c = m_Sum / points.Count;
+            if (c != centroid)
+            {
+                centroid = c;
+                return true;
+            }
+            return false;
+        }
+
+        public void Finish(IMap map)
+        {
+            Cell cell;
+            int n0 = 0;
+            int n1 = 0;
+            int rows = m_Max.x - m_Min.x + 1;
+            int cols = m_Max.y - m_Min.y + 1;
+            int[,] all = new int[rows, cols];
+
+            int CalculateLD(bool isL, Vector min)
+            {
+                bool start = false;
+                bool iscontinue = false;
+                int result = 0;
+                int temp = 0;
+                int len0 = isL ? rows : cols;
+                int len1 = isL ? cols : rows;
+                for (int i = 0; i < len0; i++)
                 {
-                    if (item == offset)
+                    for (int j = 0; j < len1; j++)
                     {
-                        foreach (var v in GetBounds(offset))
+                        temp = isL ? all[i, j] : all[j, i];
+                        if (!start && temp == 1)
                         {
-                           
-
-                            if (_map[v].walkable)
+                            start = true;
+                            result++;
+                            iscontinue = true;
+                            continue;
+                        }
+                        if (start)
+                        {
+                            cell = isL ? map[i + min.x, j + min.y] : map[j + min.x, i + min.y];
+                            if (!cell.walkable)
                             {
-                                return 1f;
+                                iscontinue = false;
+                            }
+                            if (temp == 0)
+                            {
+                                start = false;
+                                if (iscontinue)
+                                {
+                                    n1++;
+                                }
                             }
                         }
                     }
                 }
-
-                return float.MaxValue;
+                return result;
             }
 
-            public bool Contains(Vector pos)
+            for (int i = 0; i < points.Count; i++)
             {
-                return pos >= start && pos <= end;
-            }
-
-            public bool IsWalkable(Vector v)
-            {
-                Vector next;
-                foreach (var offset in Vector.eight)
+                cell = map[points[i]];
+                if (cell != null)
                 {
-                    next = v + offset;
-                    if(Contains(pos) && _map[next].walkable)
+                    cell.cluster = this;
+                    if (!cell.walkable)
                     {
-                        return true;
+                        n0++;
                     }
-                }
-            }
-        }
-
-        private static IMap _map;
-        private int m_ZoneX;
-        private int m_ZoneY;
-
-        private Zone[] m_Zone;
-
-        private int[,] m_Path;
-
-        public List<int> this[int start, int end]
-        {
-            get
-            {
-                List<int> result = new List<int>();
-                if(m_Path.TryGetFloydPath(start, end, ref result))
-                {
-                    return result;
-                }
-                return null;
-            }
-        }
-
-        public Zones(IMap map, int zonex, int zoney)
-        {
-            _map = map;
-
-            m_ZoneX = zonex <= 0 ? 1 : zonex;
-            m_ZoneY = zoney <= 0 ? 1 : zoney;
-            m_Zone = new Zone[m_ZoneX * m_ZoneY];
-            m_Path = new int[m_ZoneX, m_ZoneY];
-            Vector step = new Vector(map.Rows / m_ZoneX, map.Cols / m_ZoneY);
-            Vector start = Vector.zero;
-            Vector end = Vector.one;
-            for (int i = 0; i < m_ZoneX; i++)
-            {
-                start.x = end.x - 1;
-                end.x = Math.Min(end.x + step.x, map.Rows - 1);
-                for (int j = 0; j < m_ZoneY; j++)
-                {
-                    start.y = end.y - 1;
-                    end.y = Math.Min(end.y + step.y, map.Cols - 1);
-                    int index = i * m_ZoneY + j;
-                    m_Zone[index] = new Zone()
-                    {
-                        index = index,
-                        pos = new Vector(i, j),
-                        start = start,
-                        end = end,
-                    };
+                    all[points[i].x - m_Min.x, points[i].y - m_Min.y] = 1;
                 }
             }
 
-            m_Path = m_Zone.Floyd();
+            int l = CalculateLD(true, m_Min);
+            int d = CalculateLD(false, m_Min);
+
+            po = (float)n0 / points.Count;
+            pt = (float)n1 / (l + d);
         }
 
-        private void GetPath(int start, int end, ref List<int> route)
+        public void Reset()
         {
-            if(start != end)
-            {
-                GetPath(start, m_Path[start, end], ref route);
-            }
-            route.Add(end);
+            points.Clear();
+            m_Sum = Vector.zero;
         }
     }
 
-    public class Map<T> : IMap where T : class, ICell
+    public class Map<T> : IMap where T : Cell
     {
-        public int Rows { get; private set; }
-        public int Cols { get; private set; }
+        public int rows { get; private set; }
+        public int cols { get; private set; }
 
         private T[,] m_Cells;
 
-        public ICell this[int x, int y]
+        public Cell this[int x, int y]
         {
             get
             {
-                if (x < 0 || x >= Rows || y < 0 || y >= Cols)
+                if (x < 0 || x >= rows || y < 0 || y >= cols)
                 {
                     return null;
                 }
@@ -187,7 +177,7 @@
             }
             set
             {
-                if (x < 0 || x >= Rows || y < 0 || y >= Cols)
+                if (x < 0 || x >= rows || y < 0 || y >= cols)
                 {
                     return;
                 }
@@ -195,7 +185,7 @@
             }
         }
 
-        public ICell this[Vector pos]
+        public Cell this[Vector pos]
         {
             get
             {
@@ -206,18 +196,110 @@
                 this[pos.x, pos.y] = value;
             }
         }
+        private Clusters m_Clusters;
 
-        private Zones m_Zones;
-
-        public Map(T[,] cells, int rows, int cols, int zonex = 1, int zoney = 1)
+        public Map(T[,] cells, int rows, int cols, int k = 4)
         {
             m_Cells = cells;
-            
-            Rows = rows;
-            Cols = cols;
 
-            //分区
-            m_Zones = new Zones(this, zonex, zoney);
+            this.rows = rows;
+            this.cols = cols;
+
+            m_Clusters = new Clusters(this, k);
+        }
+
+        private class Clusters
+        {
+            private const int N = 8;
+            private int m_Count;
+            private Cluster[] m_Items;
+
+            public Clusters(IMap map, int count)
+            {
+                m_Count = Initialize(map, count);
+
+                KMeansPartition(map, 1);
+
+                for (int i = 0; i < m_Count; i++)
+                {
+                    m_Items[i].Finish(map);
+                }
+            }
+
+            private int Initialize(IMap map, int count)
+            {
+                m_Items = new Astar.Cluster[count];
+
+                int index = 0;
+                Cell cell;
+                for (int i = 0; i < map.rows; i++)
+                {
+                    for (int j = 0; j < map.cols; j++)
+                    {
+                        cell = map[i, j];
+                        if (cell == null || !cell.walkable)
+                        {
+                            m_Items[index] = new Astar.Cluster(index, new Vector(i, j));
+                            index++;
+                        }
+
+                        if (index == count)
+                        {
+                            return index;
+                        }
+                    }
+                }
+                return index;
+            }
+
+            private void KMeansPartition(IMap map, int depth)
+            {
+                for (int i = 0; i < m_Count; i++)
+                {
+                    m_Items[i].Reset();
+                }
+
+                Vector v = Vector.zero;
+                float min, d;
+                int index;
+                for (int x = 0; x < map.rows; x++)
+                {
+                    v.x = x;
+                    for (int y = 0; y < map.cols; y++)
+                    {
+                        v.y = y;
+                        min = (v - m_Items[0].centroid).sqrMagnitude;
+                        index = 0;
+                        for (int i = 1; i < m_Count; i++)
+                        {
+                            d = (v - m_Items[i].centroid).sqrMagnitude;
+                            if (d < min)
+                            {
+                                min = d;
+                                index = i;
+                            }
+                        }
+
+                        m_Items[index].Add(v);
+                    }
+                }
+
+                bool changed = false;
+                for (int i = 0; i < m_Count; i++)
+                {
+                    if (m_Items[i].Update())
+                    {
+                        changed = true;
+                    }
+                }
+
+                if (changed && depth < N)
+                {
+                    return;
+                }
+
+                KMeansPartition(map, depth + 1);
+            }
         }
     }
 }

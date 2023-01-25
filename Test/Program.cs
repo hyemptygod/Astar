@@ -7,6 +7,7 @@
     using System.Threading.Tasks;
     using Astar;
     using System.Drawing;
+    using System.Threading;
 
     class Program
     {
@@ -78,35 +79,48 @@
 
         static void Main(string[] args)
         {
-            TestFloyd();
+            //TestFloyd();
 
-            //while (true)
-            //{
-            //    int rows = 0;
-            //    while (true)
-            //    {
-            //        Console.WriteLine("please input rows(greater than 0):");
-            //        if (int.TryParse(Console.ReadLine(), out rows) && rows > 0)
-            //        {
-            //            break;
-            //        }
-            //    }
+            while (true)
+            {
+                int rows = 0;
+                while (true)
+                {
+                    Console.WriteLine("please input rows(greater than 0):");
+                    if (int.TryParse(Console.ReadLine(), out rows) && rows > 0)
+                    {
+                        break;
+                    }
+                }
 
-            //    int cols = 0;
-            //    while (true)
-            //    {
-            //        Console.WriteLine("please input cols(greater than 0):");
-            //        if (int.TryParse(Console.ReadLine(), out cols) && cols > 0)
-            //        {
-            //            break;
-            //        }
-            //    }
+                int cols = 0;
+                while (true)
+                {
+                    Console.WriteLine("please input cols(greater than 0):");
+                    if (int.TryParse(Console.ReadLine(), out cols) && cols > 0)
+                    {
+                        break;
+                    }
+                }
 
-            //    Map<Cell> map = Util.Runner("generate map", MapGenerateHelper.GenerateRandomMap, rows, cols);
-            //    AstarHelper helper = new AstarHelper(map);
-            //    helper.Scan(map[0, 0], map[rows - 1, cols - 1]);
-            //    map.Create("route", helper.Result);
-            //}
+                Map<Cell> map = Util.Runner("generate map", MapGenerateHelper.GenerateRandomMap, rows, cols, 24);
+                AstarHelper helper = new AstarHelper(map);
+                AstarEvent e = helper.Scan(map[0, 0], map[rows - 1, cols - 1]);
+
+                while(true)
+                {
+                    if(e.Finished)
+                    {
+                        break;
+                    }
+                    Thread.Sleep(20);
+                }
+
+                if(e.Searched)
+                {
+                    map.Create("route", e.Result);
+                }
+            }
         }
     }
 }

@@ -8,3 +8,13 @@ D:\Study\Astar\Test\bin\Debug\Astar.pdb
 D:\Study\Astar\Test\obj\Debug\Test.csproj.CopyComplete
 D:\Study\Astar\Test\obj\Debug\Test.exe
 D:\Study\Astar\Test\obj\Debug\Test.pdb
+E:\Study\Astar\Test\obj\Debug\Test.csproj.AssemblyReference.cache
+E:\Study\Astar\Test\obj\Debug\Test.csproj.CoreCompileInputs.cache
+E:\Study\Astar\Test\obj\Debug\Test.exe
+E:\Study\Astar\Test\obj\Debug\Test.pdb
+E:\Study\Astar\Test\bin\Debug\Test.exe.config
+E:\Study\Astar\Test\bin\Debug\Test.exe
+E:\Study\Astar\Test\bin\Debug\Test.pdb
+E:\Study\Astar\Test\bin\Debug\Astar.dll
+E:\Study\Astar\Test\bin\Debug\Astar.pdb
+E:\Study\Astar\Test\obj\Debug\Test.csproj.CopyComplete

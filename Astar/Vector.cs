@@ -285,6 +285,11 @@
 			return new Vector(a.x * b, a.y * b);
 		}
 
+		public static Vector operator /(Vector a, int b)
+		{
+			return new Vector(a.x / b, a.y / b);
+		}
+
 		public static bool operator ==(Vector lhs, Vector rhs)
 		{
 			return lhs.x == rhs.x && lhs.y == rhs.y;

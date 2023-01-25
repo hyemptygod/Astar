@@ -4,3 +4,9 @@ D:\Study\Astar\Astar\obj\Debug\Astar.csproj.AssemblyReference.cache
 D:\Study\Astar\Astar\obj\Debug\Astar.csproj.CoreCompileInputs.cache
 D:\Study\Astar\Astar\obj\Debug\Astar.dll
 D:\Study\Astar\Astar\obj\Debug\Astar.pdb
+E:\Study\Astar\Astar\bin\Debug\Astar.dll
+E:\Study\Astar\Astar\bin\Debug\Astar.pdb
+E:\Study\Astar\Astar\obj\Debug\Astar.csproj.AssemblyReference.cache
+E:\Study\Astar\Astar\obj\Debug\Astar.csproj.CoreCompileInputs.cache
+E:\Study\Astar\Astar\obj\Debug\Astar.dll
+E:\Study\Astar\Astar\obj\Debug\Astar.pdb

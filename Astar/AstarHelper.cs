@@ -1,10 +1,11 @@
 ﻿namespace Astar
 {
     using System;
+using System.Collections;
     using System.Collections.Generic;
     using System.Collections.ObjectModel;
     using System.Text;
-    using static Astar.Node;
+    using System.Threading;
 
     public enum NeighbourMode
     {
@@ -21,13 +22,15 @@
         private readonly MinHeap<Node> m_OpenList;
         private Node m_Start;
         private Node m_End;
+        private Vector m_StartPos;
         private Vector m_EndPos;
-        private Zones.Zone m_Zone;
+        private float m_Dst;
 
         public bool Searched { get; private set; }
+        public bool Finished { get; private set; }
 
-        private readonly List<ICell> m_Result;
-        public List<ICell> Result
+        private readonly List<Cell> m_Result;
+        public List<Cell> Result
         {
             get
             {
@@ -38,7 +41,7 @@
                     while (node != null)
                     {
                         m_Result.Add(node.cell);
-                        node = node.Parent;
+                        node = node.parent;
                     }
                     m_Result.Reverse();
                 }
@@ -57,33 +60,13 @@
             m_NeighbourMode = mode;
             m_OpenList = new MinHeap<Node>(n, true);
 
-            int count = map.Rows * map.Cols;
+            int count = map.rows * map.cols;
             m_Nodes = new Dictionary<Vector, Node>(count);
             m_ClosedList = new Dictionary<Vector, Node>(count);
-            m_Result = new List<ICell>(count);
+            m_Result = new List<Cell>(count);
         }
 
-        private Node GetNode(ICell cell, float g = float.MaxValue)
-        {
-            if (!m_Nodes.TryGetValue(cell.pos, out Node node))
-            {
-                node = new Node(cell)
-                {
-                    G = g,
-                    H = Heuristic(cell.pos),
-                };
-                m_Nodes.Add(cell.pos, node);
-            }
-
-            return node;
-        }
-
-        private float Heuristic(Vector pos)
-        {
-            return Vector.Chebyshev(pos, m_EndPos);
-        }
-
-        public void Scan(Zones.Zone zone, ICell start, ICell end)
+        public void Init(Cell start, Cell end)
         {
             if (start == null || !start.walkable)
             {
@@ -95,20 +78,41 @@
                 throw new Exception(string.Format("Astar Search Error. {0} is not walkable", end));
             }
 
-            m_Zone = zone;
             m_EndPos = end.pos;
+            m_StartPos = start.pos;
+            m_Dst = (m_EndPos - m_StartPos).magnitude;
 
             m_OpenList.Clear();
             m_ClosedList.Clear();
             m_Nodes.Clear();
             m_Result.Clear();
 
+            Finished = false;
             Searched = false;
 
             m_Start = GetNode(start, 0);
             m_End = GetNode(end);
+        }
 
-            Util.Runner(string.Format("scan from {0} to {1}", start.pos, end.pos), Start);
+        private Node GetNode(Cell cell, float g = float.MaxValue)
+        {
+            if (!m_Nodes.TryGetValue(cell.pos, out Node node))
+            {
+                node = new Node(cell, g, Heuristic(cell.pos), m_StartPos, m_EndPos, m_Dst);
+                m_Nodes.Add(cell.pos, node);
+            }
+
+            return node;
+        }
+
+        private float Heuristic(Vector pos)
+        {
+            return Vector.Chebyshev(pos, m_EndPos);
+        }
+
+        public void Scan()
+        {
+            Util.Runner(string.Format("scan from {0} to {1}", m_StartPos, m_EndPos), Start);
         }
 
         private void Start()
@@ -130,6 +134,8 @@
 
                 GetNeighbours(current);
             }
+
+            Finished = true;
         }
 
         private void GetNeighbours(Node current)
@@ -140,7 +146,7 @@
             }
 
             Vector next;
-            ICell cell = null;
+            Cell cell = null;
             float cost = 0f;
             bool check_cell(Vector offset)
             {
@@ -162,13 +168,10 @@
             {
                 if (check_cell(offset))
                 {
-                    float g = current.G + cost;
                     Node node = GetNode(cell);
-                    if (g < node.G)
+                    if(node.UpdateG(current, cost))
                     {
-                        node.G = g;
-                        node.F = node.G + node.H;
-                        node.Parent = current;
+                        node.parent = current;
                         m_OpenList.Push(node);
                     }
                 }
@@ -181,10 +184,44 @@
         private readonly IMap m_Map;
         private readonly NeighbourMode m_NeighbourMode;
 
+        private Queue<Thread> m_Thread = new Queue<Thread>();
+        private Queue<AstarEvent> _pool = new Queue<AstarEvent>();
+
         public AstarHelper(IMap map, NeighbourMode mode = NeighbourMode.Eight, int n = 2)
         {
             m_Map = map;
             m_NeighbourMode = mode;
+        }
+
+        public AstarEvent Scan(Cell start, Cell end)
+        {
+            AstarEvent result;
+            if (_pool.Count > 0)
+            {
+                result = _pool.Dequeue();            }
+            else
+            {
+                result = new AstarEvent(m_Map, m_NeighbourMode);
+            }
+
+            result.Init(start, end);
+
+            Thread t = new Thread(Scan)
+            {
+                IsBackground = true
+            };
+            t.Start(result);
+
+            return result;
+        }
+
+        private void Scan(object o)
+        {
+            if(o != null &&  o is AstarEvent)
+            {
+                AstarEvent e = o as AstarEvent;
+                e.Scan();
+            }
         }
     }
 }
