@@ -163,8 +163,6 @@
         public int rows { get; private set; }
         public int cols { get; private set; }
 
-        private bool m_PiercingExcept;
-        private NeighbourMode m_NeighbourMode;
         private T[,] m_Cells;
 
         public BaseCell this[int x, int y]
@@ -207,18 +205,15 @@
             this.cols = cols;
         }
 
-        public void Init(int k, bool piercingExcept, NeighbourMode mode = NeighbourMode.Eight)
+        public void Init(int k, bool piercing, NeighbourMode mode = NeighbourMode.Eight)
         {
-            m_NeighbourMode = mode;
-            m_PiercingExcept = piercingExcept;
             m_Clusters = new Clusters(this, k);
-            CalculateNeighbours();
+            CalculateNeighbours(piercing, mode);
         }
 
-        public void CalculateNeighbours()
+        public void CalculateNeighbours(bool piercing, NeighbourMode mode = NeighbourMode.Eight)
         {
-            BaseCell current, next;
-            List<Vector> expects = new List<Vector>();
+            BaseCell current;
             for (int i = 0; i < rows; i++)
             {
                 for (int j = 0; j < cols; j++)
@@ -228,39 +223,9 @@
                     {
                         continue;
                     }
-                    current.neighbours = new Dictionary<BaseCell, float>();
-                    if(m_NeighbourMode == NeighbourMode.Eight && m_PiercingExcept)
-                    {
-                        expects.Clear();
-                        foreach (var offset in Vector.four)
-                        {
-                            next = this[current.pos + offset];
-                            if (next == null || !next.walkable)
-                            {
-                                expects.Add(offset);
-                                if (Vector.dicExcept.TryGetValue(offset, out Vector[] expect))
-                                {
-                                    expects.AddRange(expect);
-                                }
-                            }
-                        }
-                    }
-                    
-                    foreach (var offset in Vector.Neighbours(m_NeighbourMode))
-                    {
-                        if(expects.Contains(offset))
-                        {
-                            continue;
-                        }
-                        next = this[current.pos + offset];
-                        if(next != null && next.walkable)
-                        {
-                            current.neighbours.Add(next, next.Cost(offset));
-                        }
-                    }
+                    current.CalculateNeighbours(this, mode, piercing);
                 }
             }
-            //cell.cost * offset.magnitude;
         }
 
         private class Clusters

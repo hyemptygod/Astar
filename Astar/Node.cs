@@ -2,17 +2,74 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Diagnostics.CodeAnalysis;
-    using System.Text;
 
     public abstract class BaseCell
     {
+        /// <summary>
+        /// 位置信息
+        /// </summary>
         public Vector pos { get; set; }
+        /// <summary>
+        /// 能否行走
+        /// </summary>
         public bool walkable { get; set; }
+        /// <summary>
+        /// 簇
+        /// </summary>
         internal Cluster cluster { get; set; }
-        public Dictionary<BaseCell,float> neighbours { get; set; }
+        /// <summary>
+        /// 邻接点对应的消耗
+        /// </summary>
+        public Dictionary<BaseCell, float> neighbours { get; set; }
 
-        public virtual float Cost(Vector offset)
+        /// <summary>
+        /// 计算邻接点
+        /// </summary>
+        /// <param name="map"></param>
+        /// <param name="mode"></param>
+        /// <param name="piercing"></param>
+        public void CalculateNeighbours(IMap map, NeighbourMode mode, bool piercing)
+        {
+            List<Vector> expects = new List<Vector>();
+            neighbours = new Dictionary<BaseCell, float>();
+            BaseCell next;
+            if (mode == NeighbourMode.Eight && piercing)
+            {
+                expects.Clear();
+                foreach (var offset in Vector.four)
+                {
+                    next = map[pos + offset];
+                    if (next == null || !next.walkable)
+                    {
+                        expects.Add(offset);
+                        if (Vector.dicExcept.TryGetValue(offset, out Vector[] expect))
+                        {
+                            expects.AddRange(expect);
+                        }
+                    }
+                }
+            }
+
+            foreach (var offset in Vector.Neighbours(mode))
+            {
+                if (expects.Contains(offset))
+                {
+                    continue;
+                }
+                next = map[pos + offset];
+                if (next != null && next.walkable)
+                {
+                    neighbours.Add(next, Cost(next, offset));
+                }
+            }
+        }
+
+        /// <summary>
+        /// 到邻接点的消耗
+        /// </summary>
+        /// <param name="offset">方向</param>
+        /// <returns></returns>
+        protected virtual float Cost(BaseCell next, Vector offset)
         {
             return offset.magnitude;
         }
