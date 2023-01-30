@@ -8,8 +8,8 @@
     {
         int rows { get; }
         int cols { get; }
-        Cell this[int x, int y] { get; }
-        Cell this[Vector pos] { get; }
+        BaseCell this[int x, int y] { get; }
+        BaseCell this[Vector pos] { get; }
     }
 
     public struct Cluster
@@ -82,7 +82,7 @@
 
         public void Finish(IMap map)
         {
-            Cell cell;
+            BaseCell cell;
             int n0 = 0;
             int n1 = 0;
             int rows = m_Max.x - m_Min.x + 1;
@@ -158,14 +158,16 @@
         }
     }
 
-    public class Map<T> : IMap where T : Cell
+    public class Map<T> : IMap where T : BaseCell
     {
         public int rows { get; private set; }
         public int cols { get; private set; }
 
+        private bool m_PiercingExcept;
+        private NeighbourMode m_NeighbourMode;
         private T[,] m_Cells;
 
-        public Cell this[int x, int y]
+        public BaseCell this[int x, int y]
         {
             get
             {
@@ -185,7 +187,7 @@
             }
         }
 
-        public Cell this[Vector pos]
+        public BaseCell this[Vector pos]
         {
             get
             {
@@ -198,19 +200,72 @@
         }
         private Clusters m_Clusters;
 
-        public Map(T[,] cells, int rows, int cols, int k = 4)
+        public Map(T[,] cells, int rows, int cols)
         {
             m_Cells = cells;
-
             this.rows = rows;
             this.cols = cols;
+        }
 
+        public void Init(int k, bool piercingExcept, NeighbourMode mode = NeighbourMode.Eight)
+        {
+            m_NeighbourMode = mode;
+            m_PiercingExcept = piercingExcept;
             m_Clusters = new Clusters(this, k);
+            CalculateNeighbours();
+        }
+
+        public void CalculateNeighbours()
+        {
+            BaseCell current, next;
+            List<Vector> expects = new List<Vector>();
+            for (int i = 0; i < rows; i++)
+            {
+                for (int j = 0; j < cols; j++)
+                {
+                    current = this[i, j];
+                    if(current == null || !current.walkable)
+                    {
+                        continue;
+                    }
+                    current.neighbours = new Dictionary<BaseCell, float>();
+                    if(m_NeighbourMode == NeighbourMode.Eight && m_PiercingExcept)
+                    {
+                        expects.Clear();
+                        foreach (var offset in Vector.four)
+                        {
+                            next = this[current.pos + offset];
+                            if (next == null || !next.walkable)
+                            {
+                                expects.Add(offset);
+                                if (Vector.dicExcept.TryGetValue(offset, out Vector[] expect))
+                                {
+                                    expects.AddRange(expect);
+                                }
+                            }
+                        }
+                    }
+                    
+                    foreach (var offset in Vector.Neighbours(m_NeighbourMode))
+                    {
+                        if(expects.Contains(offset))
+                        {
+                            continue;
+                        }
+                        next = this[current.pos + offset];
+                        if(next != null && next.walkable)
+                        {
+                            current.neighbours.Add(next, next.Cost(offset));
+                        }
+                    }
+                }
+            }
+            //cell.cost * offset.magnitude;
         }
 
         private class Clusters
         {
-            private const int N = 8;
+            private const int N = 128;
             private int m_Count;
             private Cluster[] m_Items;
 
@@ -231,7 +286,7 @@
                 m_Items = new Astar.Cluster[count];
 
                 int index = 0;
-                Cell cell;
+                BaseCell cell;
                 for (int i = 0; i < map.rows; i++)
                 {
                     for (int j = 0; j < map.cols; j++)

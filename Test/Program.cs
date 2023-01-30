@@ -8,6 +8,7 @@
     using Astar;
     using System.Drawing;
     using System.Threading;
+    using System.Runtime.CompilerServices;
 
     class Program
     {
@@ -79,48 +80,132 @@
 
         static void Main(string[] args)
         {
-            //TestFloyd();
-
             while (true)
             {
-                int rows = 0;
+                int[] temp = GetUInt("行(>0),列(>0)", 2);
+                int rows = temp[0];
+                int cols = temp[1];
                 while (true)
                 {
-                    Console.WriteLine("please input rows(greater than 0):");
-                    if (int.TryParse(Console.ReadLine(), out rows) && rows > 0)
+                    Util.Runner("create map", MapGenerateHelper.GenerateRandomMap, out Map<Cell> map, rows, cols);
+
+                    while(true)
                     {
-                        break;
+                        temp = GetUInt("分区数(>0), 穿帮优化(1|2), 移动模式(1|2)", 3);
+                        map.Init(temp[0], temp[1] == 1, (NeighbourMode)temp[2]);
+                        Search(map, 2, out EventResult e1);
+                        //Search(map, 3, out EventResult e2);
+
+                        //Console.Write("优化效率:(2 -> 3):");
+                        //OutputInfo("耗时", e1.elapsedTime, e2.elapsedTime);
+                        //OutputInfo("比较", e1.compareTimes, e2.compareTimes);
                     }
-                }
-
-                int cols = 0;
-                while (true)
-                {
-                    Console.WriteLine("please input cols(greater than 0):");
-                    if (int.TryParse(Console.ReadLine(), out cols) && cols > 0)
-                    {
-                        break;
-                    }
-                }
-
-                Map<Cell> map = Util.Runner("generate map", MapGenerateHelper.GenerateRandomMap, rows, cols, 24);
-                AstarHelper helper = new AstarHelper(map);
-                AstarEvent e = helper.Scan(map[0, 0], map[rows - 1, cols - 1]);
-
-                while(true)
-                {
-                    if(e.Finished)
-                    {
-                        break;
-                    }
-                    Thread.Sleep(20);
-                }
-
-                if(e.Searched)
-                {
-                    map.Create("route", e.Result);
+                    //map.Create("route" + index, e.route);
                 }
             }
         }
+
+        static int[] GetUInt(string str, int count = 1)
+        {
+            
+            int[] k = new int[count];
+            while (true)
+            {
+                Console.WriteLine(str + ":");
+                string[] temp = Console.ReadLine().Split(',');
+                if (temp.Length < count)
+                {
+                    continue;
+                }
+                else
+                {
+                    bool success = true;
+                    for (int i = 0; i < count; i++)
+                    {
+                        if (!int.TryParse(temp[i], out int t) || t <= 0)
+                        {
+                            success = false;
+                            break;
+                        }
+                        k[i] = t;
+                    }
+                    if(success)
+                    {
+                        break;
+                    }
+                }
+                
+            }
+            return k;
+        }
+
+        static void Search(IMap map, int n, out EventResult e)
+        {
+            PathSearchHelper.UpdateN(n);
+            var task = map.AstarSearch(map[0, 0], map[map.rows - 1, map.cols - 1]);
+            while (!task.IsCompleted)
+            {
+                Thread.Sleep(20);
+            }
+            e = task.GetResult();
+            if (e.searched)
+            {
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.Write("(Success)");
+            }
+            else
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.Write("(Failed)");
+            }
+            Console.ForegroundColor = e.elapsedTime <= 20 ? ConsoleColor.Green : ConsoleColor.Red;
+            Console.Write(string.Format(" 耗时:{0}ms 检测{1}次", e.elapsedTime, e.compareTimes));
+            Console.ResetColor();
+            Console.WriteLine();
+        }
+
+        static void OutputInfo(string str, float e2, float e8)
+        {
+            Console.Write(str + "(");
+            if (e2 > e8)
+            {
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.Write("↑");
+            }
+            else
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.Write("↓");
+            }
+            Console.Write(((e2 - e8) / (float)e2).ToString("P2"));
+            Console.ResetColor();
+            Console.Write(")");
+        }
+
+        static TaskAwaiter<int> Run()
+        {
+            return Print().GetAwaiter();
+        }
+
+        static async Task<int> Print()
+        {
+            var r = await Task.Run(() =>
+            {
+                Console.WriteLine("start");
+                int index = 0;
+                float x = 0;
+                while (index < 100000)
+                {
+                    //Console.WriteLine(index);
+                    index++;
+                    //Thread.Sleep(100);
+                    x += 0.1f;
+                }
+                Console.WriteLine(x);
+                return index;
+            });
+            return r;
+        }
+       
     }
 }

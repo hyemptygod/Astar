@@ -11,9 +11,9 @@
     using System.Threading.Tasks;
     using System.Diagnostics;
 
-    public class Cell : Astar.Cell
+    public class Cell : Astar.BaseCell
     {
-        public override int cost { get { return 1; } }
+        
     }
 
     public static class MapGenerateHelper
@@ -71,24 +71,24 @@
             return false;
         }
 
-        public static Map<Cell> GenerateRandomMap(int rows, int cols, int k)
+        private static int m_Seed = 0;
+        public static Map<Cell> GenerateRandomMap(int rows, int cols)
         {
-            Map<Cell> result = new Map<Cell>(new Cell[rows, cols], rows, cols, k);
+            Map<Cell> result = new Map<Cell>(new Cell[rows, cols], rows, cols);
             Vector start = new Vector(0, 0);
             Vector end = new Vector(rows - 1, cols - 1);
             List<Vector> list = new List<Vector>();
 
-            int seed = 0;
-            Random r = new Random(seed);
+            Random r = new Random(m_Seed);
             while(true)
             {
+                m_Seed++;
                 if (RandomMove(r, start, start, end, list))
                 {
-                    Console.WriteLine(string.Format("generate success for seed is {0}", seed));
+                    Console.WriteLine(string.Format("generate success for seed is {0}", m_Seed));
                     break;
                 }
-                seed++;
-                r = new Random(seed);
+                r = new Random(m_Seed);
             }
 
             for (int i = 0; i < rows; i++)
@@ -103,21 +103,34 @@
                     };
                 }
             }
+            
             return result;
         }
 
-        public static void Create(this IMap map, string name, List<Astar.Cell> points = null)
+        public static void Create(this IMap map, string name, List<Astar.BaseCell> points = null, List<Astar.BaseCell> floydPoints = null)
         {
             Bitmap bitmap = new Bitmap(map.cols * GRID, map.rows * GRID);
 
             name += ".png";
-            Util.Runner(string.Format("draw {0} line", name), bitmap.DrawGridLine, map, Color.Black);
-            Util.Runner(string.Format("draw {0} cell", name), bitmap.DrawCell, map);
+
+            bitmap.DrawGridLine(map, Color.Black);
+            bitmap.DrawCell(map);
             if(points != null)
             {
-                Util.Runner(string.Format("draw {0} route", name), bitmap.DrawRoute, points);
+                bitmap.DrawRoute(points, Color.Blue);
             }
-            Util.Runner(string.Format("save {0}", name), bitmap.Save, name);
+            if(floydPoints != null)
+            {
+                bitmap.DrawRoute(floydPoints, Color.Red);
+            }
+            bitmap.Save(name);
+            //Util.Runner(string.Format("draw {0} line", name), bitmap.DrawGridLine, map, Color.Black);
+            //Util.Runner(string.Format("draw {0} cell", name), bitmap.DrawCell, map);
+            //if (points != null)
+            //{
+            //    Util.Runner(string.Format("draw {0} route", name), bitmap.DrawRoute, points);
+            //}
+            //Util.Runner(string.Format("save {0}", name), bitmap.Save, name);
         }
 
         private static void DrawGridLine(this Bitmap bitmap, IMap map, Color color)
@@ -157,6 +170,24 @@
                     SetPixel(bitmap, x, j * GRID, map[i, j].walkable ? Color.Green : Color.Red);
                 }
             }
+
+            
+            //for (int i = 0; i < map.rows; i++)
+            //{
+            //    for (int j = 0; j < map.cols; j++)
+            //    {
+            //        Astar.Cell current = map[i, j];
+            //        if(current != null && current.walkable)
+            //        {
+            //            foreach (var it in current.neighbours)
+            //            {
+            //                bitmap.DrawRoute(current.pos, it.Key.pos, Color.Black);
+            //            }
+            //        }
+            //    }
+            //}
+
+            
         }
 
         private static void SetPixel(Bitmap bitmap, int x, int y, Color color)
@@ -170,38 +201,47 @@
             }
         }
 
-        private static void DrawRoute(this Bitmap bitmap, List<Astar.Cell> points)
+        private static void DrawRoute(this Bitmap bitmap, Vector from, Vector to, Color color)
+        {
+            int dirx = to.x - from.x;
+            float diry = to.y - from.y;
+            int len = 0;
+            if (dirx == 0)
+            {
+                diry /= Math.Abs(diry);
+                len = Math.Abs(from.y - to.y);
+            }
+            else
+            {
+                int abs = Math.Abs(dirx);
+                diry /= (float)abs;
+                dirx /= abs;
+                len = Math.Abs(from.x - to.x);
+            }
+
+            int startx = (int)((from.x + 0.5f) * GRID);
+            int starty = (int)((from.y + 0.5f) * GRID);
+
+            for (int j = 0; j < len * GRID; j++)
+            {
+                int x = startx + dirx * j;
+                int y = (int)Math.Round(starty + diry * j);
+                if (y < 0 || y >= bitmap.Width || x < 0 || x >= bitmap.Height)
+                {
+                    continue;
+                }
+                bitmap.SetPixel(y, x, color);
+            }
+        }
+
+        private static void DrawRoute(this Bitmap bitmap, List<Astar.BaseCell> points, Color color)
         {
             for (int i = 0; i < points.Count - 1; i++)
             {
                 Vector from = points[i].pos;
                 Vector to = points[i + 1].pos;
 
-                int dirx = to.x - from.x;
-                float diry = to.y - from.y;
-                int len = 0;
-                if (dirx == 0)
-                {
-                    diry = 1;
-                    len = Math.Abs(from.y - to.y);
-                }
-                else
-                { 
-                    diry /= (float)dirx;
-                    dirx = 1;
-                    len = Math.Abs(from.x - to.x);
-                }
-
-                int startx = (int)((from.x + 0.5f) * GRID);
-                int starty = (int)((from.y + 0.5f) * GRID);
-
-                for (int j = 0; j < len * GRID; j++)
-                {
-                    int x = startx + dirx * j;
-                    int y = (int)Math.Round(starty + diry * j);
-                    bitmap.SetPixel(y, x, Color.Blue);
-                    //bitmap.SetPixel(y+1, x+1, Color.Blue);
-                }
+                bitmap.DrawRoute(from, to, color);
             }
         }
     }

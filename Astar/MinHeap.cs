@@ -65,6 +65,9 @@
             }
         }
 
+        public int CompareTimes { get; private set; }
+        public int SwapTimes { get; private set; }
+
         public MinHeap(int n, bool uniqueness = false, IComparer<T> comapre = null, T[] datas = null)
         {
             m_N = n;
@@ -93,7 +96,8 @@
                 {
                     break;
                 }
-                if(m_Compare.Compare(this[ret], this[i]) > 0)
+                CompareTimes++;
+                if (m_Compare.Compare(this[ret], this[i]) > 0)
                 {
                     ret = i;
                 }
@@ -128,7 +132,8 @@
             {
                 child     = GetMinChildNode(node);
                 child_val = this[child];
-                if(m_Compare.Compare(val, child_val) <= 0)
+                CompareTimes++;
+                if (m_Compare.Compare(val, child_val) <= 0)
                 {
                     break;
                 }
@@ -155,6 +160,7 @@
             while (node > 1)
             {
                 p_val = this[parent];
+                CompareTimes++;
                 if (m_Compare.Compare(data, p_val) > 0)
                 {
                     break;
@@ -209,6 +215,8 @@
         {
             m_Size = 0;
             m_DicNode.Clear();
+            CompareTimes = 0;
+            SwapTimes = 0;
         }
 
         ~MinHeap()

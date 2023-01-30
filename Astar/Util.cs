@@ -6,6 +6,7 @@
     using System.Linq;
     using System.Text;
     using System.Threading.Tasks;
+    using System.Threading;
 
     public interface IFloydNode
     {
@@ -91,108 +92,183 @@
             return true;
         }
 
+        public static void StartThread(Action callback, bool isback = true)
+        {
+            Thread t = new Thread(o =>
+            {
+                callback();
+            })
+            {
+                IsBackground = isback,
+            };
 
+            t.Start();
+        }
+
+        public static void StartThread<T>(Action<T> callback, T paramater, bool isback = true)
+        {
+            Thread t = new Thread(o =>
+            {
+                callback((T)o);
+            })
+            {
+                IsBackground = isback,
+            };
+
+            t.Start(paramater);
+        }
+
+        //if (!string.IsNullOrEmpty(des))\n\t\t\t{\n\t\t\t\tConsole.WriteLine(string.Format("{0} elapsed time {1}ms", des,
+        // Console.WriteLine\(string.Format\(\"\{0\} elapsed time \{1\}ms\", des, _stopwatch.ElapsedMilliseconds\)\);
         private static Stopwatch _stopwatch = new Stopwatch();
-        public static void Runner(string des, Action callback)
+        public static long Runner(string des, Action callback)
         {
             _stopwatch.Restart();
             callback();
             _stopwatch.Stop();
-            Console.WriteLine(string.Format("{0} elapsed time {1}ms", des, _stopwatch.ElapsedMilliseconds));
+            if (!string.IsNullOrEmpty(des))
+			{
+				Console.WriteLine(string.Format("{0} elapsed time {1}ms", des, _stopwatch.ElapsedMilliseconds)); 
+			}
+			return _stopwatch.ElapsedMilliseconds;
         }
 
-        public static void Runner<T1>(string des, Action<T1> callback, T1 arg1)
+        public static long Runner<T1>(string des, Action<T1> callback, T1 arg1)
         {
             _stopwatch.Restart();
             callback(arg1);
             _stopwatch.Stop();
-            Console.WriteLine(string.Format("{0} elapsed time {1}ms", des, _stopwatch.ElapsedMilliseconds));
+            if (!string.IsNullOrEmpty(des))
+			{
+				Console.WriteLine(string.Format("{0} elapsed time {1}ms", des, _stopwatch.ElapsedMilliseconds)); 
+			}
+			return _stopwatch.ElapsedMilliseconds;
         }
 
-        public static void Runner<T1, T2>(string des, Action<T1,T2> callback, T1 arg1, T2 arg2)
+        public static long Runner<T1, T2>(string des, Action<T1,T2> callback, T1 arg1, T2 arg2)
         {
             _stopwatch.Restart();
             callback(arg1, arg2);
             _stopwatch.Stop();
-            Console.WriteLine(string.Format("{0} elapsed time {1}ms", des, _stopwatch.ElapsedMilliseconds));
+            if (!string.IsNullOrEmpty(des))
+			{
+				Console.WriteLine(string.Format("{0} elapsed time {1}ms", des, _stopwatch.ElapsedMilliseconds)); 
+			}
+			return _stopwatch.ElapsedMilliseconds;
         }
 
-        public static void Runner<T1, T2, T3>(string des, Action<T1, T2, T3> callback, T1 arg1, T2 arg2, T3 arg3)
+        public static long Runner<T1, T2, T3>(string des, Action<T1, T2, T3> callback, T1 arg1, T2 arg2, T3 arg3)
         {
             _stopwatch.Restart();
             callback(arg1, arg2, arg3);
             _stopwatch.Stop();
-            Console.WriteLine(string.Format("{0} elapsed time {1}ms", des, _stopwatch.ElapsedMilliseconds));
+            if (!string.IsNullOrEmpty(des))
+			{
+				Console.WriteLine(string.Format("{0} elapsed time {1}ms", des, _stopwatch.ElapsedMilliseconds)); 
+			}
+			return _stopwatch.ElapsedMilliseconds;
         }
 
-        public static void Runner<T1, T2, T3, T4>(string des, Action<T1, T2, T3, T4> callback, T1 arg1, T2 arg2, T3 arg3, T4 arg4)
+        public static long Runner<T1, T2, T3, T4>(string des, Action<T1, T2, T3, T4> callback, T1 arg1, T2 arg2, T3 arg3, T4 arg4)
         {
             _stopwatch.Restart();
             callback(arg1, arg2, arg3, arg4);
             _stopwatch.Stop();
-            Console.WriteLine(string.Format("{0} elapsed time {1}ms", des, _stopwatch.ElapsedMilliseconds));
+            if (!string.IsNullOrEmpty(des))
+			{
+				Console.WriteLine(string.Format("{0} elapsed time {1}ms", des, _stopwatch.ElapsedMilliseconds)); 
+			}
+			return _stopwatch.ElapsedMilliseconds;
         }
 
-        public static void Runner<T1, T2, T3, T4, T5>(string des, Action<T1, T2, T3, T4, T5> callback, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5)
+        public static long Runner<T1, T2, T3, T4, T5>(string des, Action<T1, T2, T3, T4, T5> callback, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5)
         {
             _stopwatch.Restart();
             callback(arg1, arg2, arg3, arg4, arg5);
             _stopwatch.Stop();
-            Console.WriteLine(string.Format("{0} elapsed time {1}ms", des, _stopwatch.ElapsedMilliseconds));
+            if (!string.IsNullOrEmpty(des))
+			{
+				Console.WriteLine(string.Format("{0} elapsed time {1}ms", des, _stopwatch.ElapsedMilliseconds)); 
+			}
+			return _stopwatch.ElapsedMilliseconds;
         }
 
-        public static TResult Runner<TResult>(string des, Func<TResult> callback)
+        public static long Runner<TResult>(string des, Func<TResult> callback, out TResult result)
         {
             _stopwatch.Restart();
             TResult ret = callback();
             _stopwatch.Stop();
-            Console.WriteLine(string.Format("{0} elapsed time {1}ms", des, _stopwatch.ElapsedMilliseconds));
-            return ret;
+            result = ret;
+            if (!string.IsNullOrEmpty(des))
+			{
+				Console.WriteLine(string.Format("{0} elapsed time {1}ms", des, _stopwatch.ElapsedMilliseconds)); 
+			}
+			return _stopwatch.ElapsedMilliseconds;
         }
 
-        public static TResult Runner<T1, TResult>(string des, Func<T1, TResult> callback, T1 arg1)
+        public static long Runner<T1, TResult>(string des, Func<T1, TResult> callback, out TResult result, T1 arg1)
         {
             _stopwatch.Restart();
             TResult ret = callback(arg1);
             _stopwatch.Stop();
-            Console.WriteLine(string.Format("{0} elapsed time {1}ms", des, _stopwatch.ElapsedMilliseconds));
-            return ret;
+            result =  ret;
+            if (!string.IsNullOrEmpty(des))
+			{
+				Console.WriteLine(string.Format("{0} elapsed time {1}ms", des, _stopwatch.ElapsedMilliseconds)); 
+			}
+			return _stopwatch.ElapsedMilliseconds;
         }
 
-        public static TResult Runner<T1,T2,TResult>(string des, Func<T1,T2,TResult> callback, T1 arg1, T2 arg2)
+        public static long Runner<T1,T2,TResult>(string des, Func<T1,T2,TResult> callback, out TResult result, T1 arg1, T2 arg2)
         {
             _stopwatch.Restart();
             TResult ret = callback(arg1, arg2);
             _stopwatch.Stop();
-            Console.WriteLine(string.Format("{0} elapsed time {1}ms", des, _stopwatch.ElapsedMilliseconds));
-            return ret;
+            result =  ret;
+            if (!string.IsNullOrEmpty(des))
+			{
+				Console.WriteLine(string.Format("{0} elapsed time {1}ms", des, _stopwatch.ElapsedMilliseconds)); 
+			}
+			return _stopwatch.ElapsedMilliseconds;
         }
 
-        public static TResult Runner<T1, T2, T3, TResult>(string des, Func<T1, T2, T3, TResult> callback, T1 arg1, T2 arg2, T3 arg3)
+        public static long Runner<T1, T2, T3, TResult>(string des, Func<T1, T2, T3, TResult> callback, out TResult result, T1 arg1, T2 arg2, T3 arg3)
         {
             _stopwatch.Restart();
             TResult ret = callback(arg1, arg2, arg3);
             _stopwatch.Stop();
-            Console.WriteLine(string.Format("{0} elapsed time {1}ms", des, _stopwatch.ElapsedMilliseconds));
-            return ret;
+            result = ret;
+            if (!string.IsNullOrEmpty(des))
+			{
+				Console.WriteLine(string.Format("{0} elapsed time {1}ms", des, _stopwatch.ElapsedMilliseconds)); 
+			}
+			return _stopwatch.ElapsedMilliseconds;
         }
 
-        public static TResult Runner<T1, T2, T3, T4, TResult>(string des, Func<T1, T2, T3, T4, TResult> callback, T1 arg1, T2 arg2, T3 arg3, T4 arg4)
+        public static long Runner<T1, T2, T3, T4, TResult>(string des, Func<T1, T2, T3, T4, TResult> callback, out TResult result,T1 arg1, T2 arg2, T3 arg3, T4 arg4)
         {
             _stopwatch.Restart();
             TResult ret = callback(arg1, arg2, arg3, arg4);
             _stopwatch.Stop();
-            Console.WriteLine(string.Format("{0} elapsed time {1}ms", des, _stopwatch.ElapsedMilliseconds));
-            return ret;
+            result =  ret;
+            if (!string.IsNullOrEmpty(des))
+			{
+				Console.WriteLine(string.Format("{0} elapsed time {1}ms", des, _stopwatch.ElapsedMilliseconds)); 
+			}
+			return _stopwatch.ElapsedMilliseconds;
         }
 
-        public static TResult Runner<T1, T2, T3, T4, T5, TResult>(string des, Func<T1, T2, T3, T4, T5, TResult> callback, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5)
+        public static long Runner<T1, T2, T3, T4, T5, TResult>(string des, Func<T1, T2, T3, T4, T5, TResult> callback, out TResult result, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5)
         {
             _stopwatch.Restart();
             TResult ret = callback(arg1, arg2, arg3, arg4, arg5);
             _stopwatch.Stop();
-            Console.WriteLine(string.Format("{0} elapsed time {1}ms", des, _stopwatch.ElapsedMilliseconds));
-            return ret;
+            result = ret;
+            if (!string.IsNullOrEmpty(des))
+			{
+				Console.WriteLine(string.Format("{0} elapsed time {1}ms", des, _stopwatch.ElapsedMilliseconds)); 
+			}
+			return _stopwatch.ElapsedMilliseconds;
         }
     }
 }

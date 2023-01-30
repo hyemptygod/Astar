@@ -74,6 +74,14 @@
 			left_up,
 		};
 
+		public static readonly Dictionary<Vector, Vector[]> dicExcept = new Dictionary<Vector, Vector[]>()
+		{
+            {up, new Vector[]{right_up,left_up} },
+            {down, new Vector[]{right_down,left_down} },
+            {left, new Vector[]{left_down,left_up} },
+            {right,new Vector[]{right_down,right_up} }
+        };
+
 		public static Vector[] Neighbours(NeighbourMode mode)
         {
 			switch(mode)
@@ -156,6 +164,29 @@
 			this.x = x;
 			this.y = y;
 		}
+
+		public bool Normal()
+        {
+			if(x != 0 && y != 0)
+            {
+				return false;
+            }
+
+			if(x == 0 && y == 0)
+            {
+				return false;
+            }
+
+			if(x == 0)
+            {
+				y /= Math.Abs(y);
+            }
+            else if(y == 0)
+            {
+				x /= Math.Abs(x);
+            }
+			return true;
+        }
 
 		/// <summary>
 		///   <para>Returns the distance between a and b.</para>

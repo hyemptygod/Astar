@@ -41,7 +41,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AstarHelper.cs" />
+    <Compile Include="PathSearchHelper.cs" />
+    <Compile Include="FloydHelper.cs" />
     <Compile Include="Map.cs" />
     <Compile Include="MinHeap.cs" />
     <Compile Include="Node.cs" />
