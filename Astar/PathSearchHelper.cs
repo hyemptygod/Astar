@@ -45,28 +45,31 @@
 
         protected Node GetNode(BaseCell cell)
         {
-            if (!m_Nodes.TryGetValue(cell.pos, out Node node))
+            if (!m_Nodes.TryGetValue(cell.Pos, out Node node))
             {
-                node = new Node(cell, m_Start, m_End, m_Dst);
-                m_Nodes.Add(cell.pos, node);
+                node = new Node(cell, m_Start, m_End, m_Dst)
+                {
+                    Index = cell.Pos.x * m_Map.Cols + cell.Pos.y,
+                };
+                m_Nodes.Add(cell.Pos, node);
             }
             return node;
         }
 
         public virtual void Init(BaseCell start, BaseCell end)
         {
-            if (start == null || !start.walkable)
+            if (start == null || !start.Walkable)
             {
                 throw new Exception(string.Format("Astar Search Error. {0} is not walkable", start));
             }
 
-            if (end == null || !end.walkable)
+            if (end == null || !end.Walkable)
             {
                 throw new Exception(string.Format("Astar Search Error. {0} is not walkable", end));
             }
 
-            m_Start = start.pos;
-            m_End = end.pos;
+            m_Start = start.Pos;
+            m_End = end.Pos;
             m_Dst = (m_End - m_Start).magnitude;
             m_Result.Reset();
             m_Nodes.Clear();
@@ -93,7 +96,6 @@
         public bool searched;
         public List<BaseCell> route;
         public long elapsedTime;
-        public int compareTimes;
 
         public void Set(Node start, Node end)
         {
@@ -103,7 +105,7 @@
                 while (node != null)
                 {
                     route.Add(node.cell);
-                    node = node.parent;
+                    node = node.Parent;
                 }
                 route.Reverse();
             }
@@ -124,20 +126,20 @@
     public class AstarEvent : BaseEvent
     {
         public static int n = 2;
-        private readonly Dictionary<Vector, Node> m_ClosedList;
+        private readonly BitArray m_ClosedList;
         private readonly MinHeap<Node> m_OpenList;
 
         public AstarEvent(IMap map) : base(map)
         {
             m_OpenList = new MinHeap<Node>(n, true);
-            m_ClosedList = new Dictionary<Vector, Node>(32);
+            m_ClosedList = new BitArray(map.Length);
         }
 
         public override void Init(BaseCell start, BaseCell end)
         {
             base.Init(start, end);
             m_OpenList.Clear();
-            m_ClosedList.Clear();
+            m_ClosedList.SetAll(false);
         }
 
         protected override void ScanHandle()
@@ -150,27 +152,26 @@
                 {
                     break;
                 }
-                m_ClosedList[current.cell.pos] = current;
+                m_ClosedList[current.Index] = true;
                 if (current == m_EndNode)
                 {
                     m_Result.searched = true;
                     break;
                 }
-                foreach (var it in current.cell.neighbours)
+                foreach (var it in current.cell.Neighbours)
                 {
-                    if (m_ClosedList.ContainsKey(it.Key.pos))
+                    Node node = GetNode(it.Key);
+                    if (m_ClosedList[node.Index])
                     {
                         continue;
                     }
-                    Node node = GetNode(it.Key);
                     if (node.UpdateG(current, it.Value))
                     {
-                        node.parent = current;
+                        node.Parent = current;
                         m_OpenList.Push(node);
                     }
                 }
             }
-            m_Result.compareTimes = m_ClosedList.Count;
         }
     }
 

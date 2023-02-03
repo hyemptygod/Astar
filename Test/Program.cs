@@ -142,7 +142,7 @@
         static void Search(IMap map, int n, out EventResult e)
         {
             PathSearchHelper.UpdateN(n);
-            var task = map.AstarSearch(map[0, 0], map[map.rows - 1, map.cols - 1]);
+            var task = map.AstarSearch(map[0, 0], map[map.Rows - 1, map.Cols - 1]);
             while (!task.IsCompleted)
             {
                 Thread.Sleep(20);
@@ -159,7 +159,7 @@
                 Console.Write("(Failed)");
             }
             Console.ForegroundColor = e.elapsedTime <= 20 ? ConsoleColor.Green : ConsoleColor.Red;
-            Console.Write(string.Format(" 耗时:{0}ms 检测{1}次", e.elapsedTime, e.compareTimes));
+            Console.Write(string.Format(" 耗时:{0}ms", e.elapsedTime));
             Console.ResetColor();
             Console.WriteLine();
         }

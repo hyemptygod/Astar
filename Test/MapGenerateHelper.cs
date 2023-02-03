@@ -98,8 +98,8 @@
                     Vector pos = new Vector(i, j);
                     result[pos] = new Cell()
                     {
-                        pos = pos,
-                        walkable = list.Contains(pos) || r.Next(2) == 1,
+                        Pos = pos,
+                        Walkable = list.Contains(pos) || r.Next(2) == 1,
                     };
                 }
             }
@@ -109,7 +109,7 @@
 
         public static void Create(this IMap map, string name, List<Astar.BaseCell> points = null, List<Astar.BaseCell> floydPoints = null)
         {
-            Bitmap bitmap = new Bitmap(map.cols * GRID, map.rows * GRID);
+            Bitmap bitmap = new Bitmap(map.Cols * GRID, map.Rows * GRID);
 
             name += ".png";
 
@@ -135,7 +135,7 @@
 
         private static void DrawGridLine(this Bitmap bitmap, IMap map, Color color)
         {
-            for (int x = 0; x < map.rows; x++)
+            for (int x = 0; x < map.Rows; x++)
             {
                 for (int i = 0; i < LINE; i++)
                 {
@@ -147,7 +147,7 @@
                 }
             }
 
-            for (int y = 0; y < map.cols; y++)
+            for (int y = 0; y < map.Cols; y++)
             {
                 for (int i = 0; i < LINE; i++)
                 {
@@ -162,12 +162,12 @@
 
         private static void DrawCell(this Bitmap bitmap, IMap map)
         {
-            for (int i = 0; i < map.rows; i++)
+            for (int i = 0; i < map.Rows; i++)
             {
                 int x = i * GRID;
-                for (int j = 0; j < map.cols; j++)
+                for (int j = 0; j < map.Cols; j++)
                 {
-                    SetPixel(bitmap, x, j * GRID, map[i, j].walkable ? Color.Green : Color.Red);
+                    SetPixel(bitmap, x, j * GRID, map[i, j].Walkable ? Color.Green : Color.Red);
                 }
             }
 
@@ -238,8 +238,8 @@
         {
             for (int i = 0; i < points.Count - 1; i++)
             {
-                Vector from = points[i].pos;
-                Vector to = points[i + 1].pos;
+                Vector from = points[i].Pos;
+                Vector to = points[i + 1].Pos;
 
                 bitmap.DrawRoute(from, to, color);
             }

@@ -6,8 +6,9 @@
 
     public interface IMap
     {
-        int rows { get; }
-        int cols { get; }
+        int Rows { get; }
+        int Cols { get; }
+        int Length { get; }
         BaseCell this[int x, int y] { get; }
         BaseCell this[Vector pos] { get; }
     }
@@ -112,7 +113,7 @@
                         if (start)
                         {
                             cell = isL ? map[i + min.x, j + min.y] : map[j + min.x, i + min.y];
-                            if (!cell.walkable)
+                            if (!cell.Walkable)
                             {
                                 iscontinue = false;
                             }
@@ -135,8 +136,8 @@
                 cell = map[points[i]];
                 if (cell != null)
                 {
-                    cell.cluster = this;
-                    if (!cell.walkable)
+                    cell.Cluster = this;
+                    if (!cell.Walkable)
                     {
                         n0++;
                     }
@@ -160,8 +161,8 @@
 
     public class Map<T> : IMap where T : BaseCell
     {
-        public int rows { get; private set; }
-        public int cols { get; private set; }
+        public int Rows { get; private set; }
+        public int Cols { get; private set; }
 
         private T[,] m_Cells;
 
@@ -169,7 +170,7 @@
         {
             get
             {
-                if (x < 0 || x >= rows || y < 0 || y >= cols)
+                if (x < 0 || x >= Rows || y < 0 || y >= Cols)
                 {
                     return null;
                 }
@@ -177,7 +178,7 @@
             }
             set
             {
-                if (x < 0 || x >= rows || y < 0 || y >= cols)
+                if (x < 0 || x >= Rows || y < 0 || y >= Cols)
                 {
                     return;
                 }
@@ -196,13 +197,17 @@
                 this[pos.x, pos.y] = value;
             }
         }
+
+        public int Length { get; private set; }
+
         private Clusters m_Clusters;
 
         public Map(T[,] cells, int rows, int cols)
         {
             m_Cells = cells;
-            this.rows = rows;
-            this.cols = cols;
+            this.Rows = rows;
+            this.Cols = cols;
+            this.Length = rows * cols;
         }
 
         public void Init(int k, bool piercing, NeighbourMode mode = NeighbourMode.Eight)
@@ -214,12 +219,12 @@
         public void CalculateNeighbours(bool piercing, NeighbourMode mode = NeighbourMode.Eight)
         {
             BaseCell current;
-            for (int i = 0; i < rows; i++)
+            for (int i = 0; i < Rows; i++)
             {
-                for (int j = 0; j < cols; j++)
+                for (int j = 0; j < Cols; j++)
                 {
                     current = this[i, j];
-                    if(current == null || !current.walkable)
+                    if(current == null || !current.Walkable)
                     {
                         continue;
                     }
@@ -252,12 +257,12 @@
 
                 int index = 0;
                 BaseCell cell;
-                for (int i = 0; i < map.rows; i++)
+                for (int i = 0; i < map.Rows; i++)
                 {
-                    for (int j = 0; j < map.cols; j++)
+                    for (int j = 0; j < map.Cols; j++)
                     {
                         cell = map[i, j];
-                        if (cell == null || !cell.walkable)
+                        if (cell == null || !cell.Walkable)
                         {
                             m_Items[index] = new Astar.Cluster(index, new Vector(i, j));
                             index++;
@@ -282,10 +287,10 @@
                 Vector v = Vector.zero;
                 float min, d;
                 int index;
-                for (int x = 0; x < map.rows; x++)
+                for (int x = 0; x < map.Rows; x++)
                 {
                     v.x = x;
-                    for (int y = 0; y < map.cols; y++)
+                    for (int y = 0; y < map.Cols; y++)
                     {
                         v.y = y;
                         min = (v - m_Items[0].centroid).sqrMagnitude;

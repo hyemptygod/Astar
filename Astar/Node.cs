@@ -8,19 +8,21 @@
         /// <summary>
         /// 位置信息
         /// </summary>
-        public Vector pos { get; set; }
+        public Vector Pos { get; set; }
         /// <summary>
         /// 能否行走
         /// </summary>
-        public bool walkable { get; set; }
+        public bool Walkable { get; set; }
         /// <summary>
         /// 簇
         /// </summary>
-        internal Cluster cluster { get; set; }
+        internal Cluster Cluster { get; set; }
         /// <summary>
         /// 邻接点对应的消耗
         /// </summary>
-        public Dictionary<BaseCell, float> neighbours { get; set; }
+        public Dictionary<BaseCell, float> Neighbours { get; set; }
+
+        public int Index { get; private set; }
 
         /// <summary>
         /// 计算邻接点
@@ -31,15 +33,15 @@
         public void CalculateNeighbours(IMap map, NeighbourMode mode, bool piercing)
         {
             List<Vector> expects = new List<Vector>();
-            neighbours = new Dictionary<BaseCell, float>();
+            Neighbours = new Dictionary<BaseCell, float>();
             BaseCell next;
             if (mode == NeighbourMode.Eight && piercing)
             {
                 expects.Clear();
                 foreach (var offset in Vector.four)
                 {
-                    next = map[pos + offset];
-                    if (next == null || !next.walkable)
+                    next = map[Pos + offset];
+                    if (next == null || !next.Walkable)
                     {
                         expects.Add(offset);
                         if (Vector.dicExcept.TryGetValue(offset, out Vector[] expect))
@@ -56,10 +58,10 @@
                 {
                     continue;
                 }
-                next = map[pos + offset];
-                if (next != null && next.walkable)
+                next = map[Pos + offset];
+                if (next != null && next.Walkable)
                 {
-                    neighbours.Add(next, Cost(next, offset));
+                    Neighbours.Add(next, Cost(next, offset));
                 }
             }
         }
@@ -86,18 +88,20 @@
         private float m_R1;
         private float m_R2;
 
-        public Node parent { get; set; }
+        public Node Parent { get; set; }
+
+        public int Index { get; set; }
 
         public Node(BaseCell cell, Vector start, Vector end, float dst)
         {
             this.cell = cell;
-            m_G = cell.pos == start ? 0 : float.MaxValue;
-            m_H = Heuristic(cell.pos, end);
+            m_G = cell.Pos == start ? 0 : float.MaxValue;
+            m_H = Heuristic(cell.Pos, end);
 
-            float dsn = (cell.pos - start).magnitude;
-            float dnt = (end - cell.pos).magnitude;
-            m_R1 = cell.cluster.pt + dsn / dst;
-            m_R2 = (1- cell.cluster.po) + (float)Math.Pow(Math.E, dnt / dst);
+            float dsn = (cell.Pos - start).magnitude;
+            float dnt = (end - cell.Pos).magnitude;
+            m_R1 = cell.Cluster.pt + dsn / dst;
+            m_R2 = (1- cell.Cluster.po) + (float)Math.Pow(Math.E, dnt / dst);
         }
 
         private float Heuristic(Vector pos, Vector end)

@@ -122,7 +122,7 @@
             bool check()
             {
                 cell = map[checkv];
-                if (cell == null || !cell.walkable)
+                if (cell == null || !cell.Walkable)
                 {
                     return false;
                 }
